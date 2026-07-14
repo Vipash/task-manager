@@ -3,18 +3,19 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="style.css">
         <title> Dashboard </title>
     </head>
     <body>
         <button>Logout</button>
         <h2> Add Tasks: </h2>
         <form>
-            <div>
+            <div class="form-group">
             <label for="task">Task Name:</label>
             <input type="text" id="task" placeholder="Task 1">
             </div>
 
-            <div>
+            <div class="form-group">
             <label for="priority"> Task Priority: </label>
             <select id="priority">
                 <option>Low</option>
@@ -22,7 +23,7 @@
                 <option>High</option>
             </select>
             </div>
-            <button> Save </button>
+            <button type="submit" id="submit-btn"> Save </button>
         </form>
         <div id="task-container"></div>
     </body>
