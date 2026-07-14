@@ -6,25 +6,49 @@
         <link rel="stylesheet" href="style.css">
         <title> Dashboard </title>
     </head>
-    <body>
-        <button>Logout</button>
-        <h2> Add Tasks: </h2>
-        <form>
-            <div class="form-group">
-            <label for="task">Task Name:</label>
-            <input type="text" id="task" placeholder="Task 1">
-            </div>
+    <body class="dashboard-page">
+        <header class="main-header">
+            <h1>Task Manager Dashboard</h1>
+            <button id="logout-btn">Logout</button>
+        </header>
+        
+        <main class="dashboard-content">
+            <section class="task-form-card">
+                <h3>Create a New Task</h3>
+                <form id="task-creation-form">
+                    <div class="form-group">
+                        <label for="task">Task Name</label>
+                        <input type="text" id="task" placeholder="e.g. Learn CSS" required>
+                    </div>
 
-            <div class="form-group">
-            <label for="priority"> Task Priority: </label>
-            <select id="priority">
-                <option>Low</option>
-                <option>Medium</option>
-                <option>High</option>
-            </select>
-            </div>
-            <button type="submit" id="submit-btn"> Save </button>
-        </form>
-        <div id="task-container"></div>
+                    <div class="form-group">
+                        <label for="task-priority">Priority Level:</label>
+                        <select id="task-priority">
+                            <option value="low">Low Priority</option>
+                            <option value="medium">Medium Priority</option>
+                            <option value="high">High Priority</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" id="save-task-btn">Save Task</button>
+                </form>
+            </section>
+
+            <section class="task-list-container">
+                <h3>Your Tasks</h3>
+                <div id="tasks-container">
+                    <div class="task-card border-high">
+                        <div class="task-details">
+                            <h4>Build Dashboard UI</h4>
+                            <p>Priority: High</p>
+                        </div>
+                        <div class="task-actions">
+                            <button class="status-btn">Complete</button>
+                            <button class="delete-btn">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
     </body>
 </html>

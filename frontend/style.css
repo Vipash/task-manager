@@ -1,12 +1,15 @@
-body {
-    background-color: bisque;
-    font-family: Arial, Helvetica, sans-serif;
-    margin: 0;
+.auth-page {
+    background-color:#0056b3;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+.dashboard-page {
+    background-color:rgb(205, 235, 255);
+    display: block;
+    padding: 20px;
 }
 
 form {
@@ -35,6 +38,7 @@ label {
 
 input, select {
     padding: 10px;
+    margin-bottom: 10px;
     font-size: 14px;
     border: 1px solid #000000;
     border-radius: 5px;
@@ -57,3 +61,105 @@ input:focus {
 #submit-btn:hover {
     background-color: #0056b3;
 }
+
+.main-header {
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #2c3c60;
+    color:white;
+    padding: 15px 30px;
+    border-radius: 6px;
+    margin-bottom: 30px;
+}
+
+#logout-btn {
+    background-color: #992121be;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+#logout-btn:hover {
+    background-color: #f81e3bba
+}
+
+.dashboard-content {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.task-form-card {
+    background-color: lightcyan;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(26, 1, 253, 0.5);
+    flex: 1;
+    min-width: 300px;
+}
+
+#save-task-btn {
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+#save-task-btn:hover {
+    background-color: #128643;
+}
+
+.task-list-container {
+    flex: 2;
+    min-width: 350px;
+}
+
+.task-card {
+    background-color: white;
+    border: 1px solid #328bff;
+    border-left: 6px solid #3e5472;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.task-card.border-high {
+    border-left-color: #e74c3c;
+}
+
+.task-details h4 {
+    margin: 0 0 5px 0;
+    font-size: 18px;
+    color: #1a202c;
+}
+.task-details p {
+    margin: 0;
+    font-size: 14px;
+    color: #718096;
+}
+
+.task-actions button {
+    padding: 6px 12px;
+    font-size: 13px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+.status-btn {background-color:#ebf8ff; color: #2b6cb0;}
+.status-btn:hover {background-color: #bee3f8;}
+
+.delete-btn {background-color: #fff5f5; color: #c53030;}
+.delete.btn:hover {background-color: #fed7d7;}

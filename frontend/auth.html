@@ -6,15 +6,17 @@
         <link rel="stylesheet" href="style.css">
         <title> Page Title Here</title>
     </head>
-    <body>
+    <body class="auth-page">
         <h2> Welcome to Task Manager </h2>
         <form>
+            <div class="form-group">
             <p> Input your details here: </p>
             <label for = "email"> Email ID: </label>
             <input type="email" id="email" placeholder="abc@gmail.com" required>
             <label for = "pass"> Password: </label>
             <input type="password" id="pass" placeholder="use a strong password" required>
-            <button>Login</button>
+            <button id="submit-btn">Login</button>
+            </div>
         </form>
     </body>
 </html>
