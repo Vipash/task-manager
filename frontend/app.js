@@ -32,3 +32,10 @@ taskForm.addEventListener('submit', function(event) {
 
         taskInput.value = '';
 });
+
+tasksContainer.addEventListener('click', function(event) {
+    if (event.target.className === 'delete-btn') {
+        const cardToDestroy = event.target.closest('.task-card');
+        cardToDestroy.remove();
+    }
+});
