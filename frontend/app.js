@@ -3,7 +3,17 @@ const taskInput = document.getElementById('task');
 const priorityInput = document.getElementById('task-priority');
 const tasksContainer = document.getElementById('tasks-container');
 
-let tasks = JSON.parse(localStorage.getItem('myTasks')) || [];
+let tasks = [];
+
+async function fetchTasks() {
+    try {
+        const response = await fetch('/api/tasks');
+        tasks = await response.json();
+        renderTasks();
+    } catch (error) {
+        console.error("Failed to load tasks from server:", error);
+    }
+}
 
 function renderTasks() {
     tasksContainer.innerHTML = '';
@@ -16,21 +26,22 @@ function renderTasks() {
             taskCard.className = 'task-card border-high';
         }
 
-        taskCard.innerHTML = `
-        <div class="task-details">
-            <h4>${task.name}</h4>
-            <p>Priority: ${task.priority.toUpperCase()}</p>
-        </div>
-        <div class="task-actions">
-            <button class="status-btn">Complete</button>
-            <button class="delete-btn" data-id="${task.id}">Delete</button>
-        </div>
-        `;
-        tasksContainer.appendChild(taskCard);
-    });
+    taskCard.innerHTML = `
+    <div class="task-details">
+        <h4>${task.name}</h4>
+        <p>Priority: ${task.priority.toUpperCase()}</p>
+    </div>
+    <div class="task-actions">
+        <button class="status-btn">Complete</button>
+        <button class="delete-btn" data-id="${task.id}">Delete</button>
+    </div>
+    `;
 
-    localStorage.setItem('myTasks', JSON.stringify(tasks));
+    tasksContainer.appendChild(taskCard);
+});
 }
+
+
 
 taskForm.addEventListener('submit', function(event) {
     event.preventDefault();
@@ -56,4 +67,4 @@ tasksContainer.addEventListener('click', function(event) {
     }
 });
 
-renderTasks();
+fetchTasks();
