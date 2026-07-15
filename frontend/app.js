@@ -40,30 +40,48 @@ function renderTasks() {
     tasksContainer.appendChild(taskCard);
 });
 }
-
-
-
-taskForm.addEventListener('submit', function(event) {
+taskForm.addEventListener('submit', async function(event) {
     event.preventDefault();
 
     const newTask = {
         id: Date.now().toString(),
         name: taskInput.value,
-        priority: priorityInput.value 
+        priority: priorityInput.value
     };
 
-    tasks.push(newTask);
-    renderTasks();
-    taskInput.value = '';
+    try {
+        const response = await fetch('/api/tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newTask)
+        });
+
+        if (response.ok) {
+            await fetchTasks();
+            taskInput.value = '';
+        }
+    } catch (error) {
+        console.error("Error creating task on backend:", error);
+    }
 });
 
-tasksContainer.addEventListener('click', function(event) {
+tasksContainer.addEventListener('click', async function(event) {
     if (event.target.className === 'delete-btn') {
         const idToDelete = event.target.getAttribute('data-id');
-        tasks = tasks.filter(function(task) {
-            return task.id !== idToDelete;
-        });
-        renderTasks();
+
+        try {
+            const response = await fetch(`/api/tasks/${idToDelete}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                await fetchTasks();
+            }
+        } catch (error) {
+            console.error("Error deleting task from backend:", error);
+        }
     }
 });
 

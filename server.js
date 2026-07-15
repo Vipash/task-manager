@@ -18,7 +18,7 @@ app.get('/api/tasks', function(req, res) {
     res.json(serverTasks);
 });
 
-app.post('api/tasks', function(req, res) {
+app.post('/api/tasks', function(req, res) {
     const newTask = req.body;
     serverTasks.push(newTask);
     res.status(201).json(newTask);
