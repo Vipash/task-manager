@@ -1,50 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="style.css">
-        <title> Dashboard </title>
-    </head>
-    <body class="dashboard-page">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Task Manager</title>
+</head>
+<body id="page-body" class="auth-page">
+    <div id="auth-container" style="max-width: 400px; margin: 80px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.5);">
+        <h2 id="auth-title" style="text-align: center; margin-bottom: 20px;">Welcome to Task Manager</h2>
+
+        <div id="auth-error-message" style="color: #dc3545; font-size: 0.9rem; margin-bottom: 15px; text-align: center;"></div>
+
+        <form id="auth-form">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <p id="auth-subtitle" style="margin-bottom: 15px; font-weight: 500;">Input your details here to login:</p>
+
+                <label for="email" style="display: block; font-size: 0.9rem; font-weight: bold; margin-bottom: 5px;">Email ID:</label>
+                <input type="email" id="email" placeholder="vipss@gmail.com" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; margin-bottom: 15px;">
+
+                <label for="pass" style="display: block; font-size: 0.9rem; font-weight: bold; margin-bottom: 5px;">Password:</label>
+                <input type="password" id="pass" placeholder="use a stronk password" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; margin-bottom: 15px;">
+
+                <button type="submit" id="submit-btn" style="width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Login</button>
+            </div>
+        </form>
+
+        <p style="text-align: center; font-size: 0.9rem; margin-top: 15px; margin-bottom: 0;">
+            <span id="auth-toggle-text">Don't have an account?</span>
+            <a href="#" id="auth-toggle-link" style="color: #007bff; text-decoration: none; font-weight: bold;">Register Now</a>
+        </p>
+    </div>
+
+    <!--Application Dashboard-->
+    <div id="app-container" style="display: none;">
         <header class="main-header">
-            <h1>Task Manager Dashboard</h1>
+            <div>
+                <h1>Task Manager Dashboard</h1>
+                <p style="margin: 0; color: #666; font-size: 0.9rem;" id="user-display-email"></p>
+            </div>
             <button id="logout-btn">Logout</button>
         </header>
-        
+
         <main class="dashboard-content">
             <section class="task-form-card">
                 <h3>Create a New Task</h3>
                 <form id="task-creation-form">
-                    <div id ="error-message" 
-                    style="color: #dc3545; font-size: 0.9rem; margin-bottom: 10px; min-height: 20px;">
-                    </div>
+                    <div id="error-message" style="color: #dc3545; font-size: 0.9rem; margin-bottom: 10px; min-height: 20px;"></div>
+
                     <div class="form-group">
                         <label for="task">Task Name</label>
-                        <input type="text" id="task" placeholder="e.g. Learn CSS" required>
+                        <input type="text" id="task" placeholder="e.g. Learn German" required>
                     </div>
 
                     <div class="form-group">
                         <label for="task-priority">Priority Level:</label>
-                        <select id="task-priority">
+                        <select id="task-pirority">
                             <option value="low">Low Priority</option>
                             <option value="medium">Medium Priority</option>
                             <option value="high">High Priority</option>
                         </select>
                     </div>
-                    
+
                     <button type="submit" id="save-task-btn">Save Task</button>
                 </form>
             </section>
 
             <section class="task-list-container">
                 <h3>Your Tasks</h3>
-                <div class="dashboard-controls"
-                style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+                <div class="dashboard-controls" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
                     <div class="filter-group" style="display: flex; gap: 5px;">
-                        <button class="filter-btn active-filter" data-filter="all">All</button>
+                        <button class="filter-btn active-filter" data-filter="acitve">Active</button>
                         <button class="filter-btn" data-filter="active">Active</button>
-                        <button class="filter-btn" data-filter="completed">Completed</button>
+                        <button class="Filter-btn" data-filter="completed">Completed</button>
                     </div>
                     <div class="sort-group">
                         <label for="sort-select" style="font-size: 0.9rem; font-weight: bold; margin-right: 5px;">Sort By:</label>
@@ -53,12 +81,14 @@
                             <option value="priority-desc">Priority: High to Low</option>
                             <option value="priority-asc">Priority: Low to High</option>
                         </select>
-                    </div>    
+                    </div>
                 </div>
-                <div id="tasks-container">
-                </div>
+
+                <div id="tasks-container"></div>
             </section>
         </main>
-        <script src="app.js"></script>
-    </body>
+    </div>
+
+    <script src="app.js"></script>
+</body>
 </html>

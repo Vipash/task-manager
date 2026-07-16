@@ -1,15 +1,38 @@
 const express = require('express');
 const path = require('path');
-
 const fs = require('fs').promises;
+
+const crypto = require('crypto');
 
 const app = express();
 const PORT = 3000;
 
 const TASKS_FILE_PATH = path.join(__dirname, 'tasks.json');
+const USERS_FILE_PATH = path.join(__dirname, 'users.json');
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'frontend')));
+
+function hashPassword(password) {
+    return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+async function readUserFromFile() {
+    try {
+        const rawData = await fs.readFile(USERS_FILE_PATH, 'utf8');
+        return JSON.parse(rawData);
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            await writeUsersToFile([]);
+            return [];
+        }
+        throw error;
+    }
+}
+
+async function writeUsersToFile(usersArray) {
+    await fs.writeFile(USERS_FILE_PATH, JSON.stringify(usersArray, null, 2), 'utf8');
+}
 
 async function readTasksFromFile() {
     try {
@@ -17,108 +40,166 @@ async function readTasksFromFile() {
         return JSON.parse(rawData);
     } catch (error) {
         if (error.code === 'ENOENT') {
-            const defaultTasks = [
-                { id: "1", name: "Learn Backend Basics", priority: "high"},
-                { id: "2", name: "Build an API", priority: "low"}
-            ];
-            await writeTasksToFile(defaultTasks);
-            return defaultTasks;
+            await writeTasksToFile([]);
+            return [];
         }
         throw error;
     }
 }
 
 async function writeTasksToFile(tasksArray) {
-    await fs.writeFile(TASKS_FILE_PATH, JSON.stringify(tasksArray, null, 2), 'utf8');
+    await fs.writeFile(TASKS_FILE_PATH, JSON.stringify(tasksArray, null, 2), 'utf8')
 }
 
-//API Endpoints
+
+app.post('/api/register', async function(req, res) {
+    try {
+        const {email, password} = req.body;
+
+        if (!email || !password || email.trim() === "" || password.trim() === "") {
+            return res.status(400).json({error: "Email and password are required."});
+        }
+
+        const users = await readUsersFromFile();
+
+        const userExists = users.some(u => u.email.toLowerCase() === email.toLowerCase());
+        if (userExists) {
+            return res.status(400).json({error: "An account with this email already exists."});
+        }
+
+        const newUser = {
+            id: Date.now().toString(),
+            email: email.toLowerCase(),
+            passwordHash: hashPassword(password)
+        };
+
+        users.push(newUser);
+        await writeUsersToFile(users);
+
+        res.status(201).json({message: "Registration successful!", userId: newUser.id});
+    } catch (error) {
+        res.status(500).json({error: "Internal server error during registration."});
+    }
+});
+
+app.post('/api/login', async function(req, res) {
+    try {
+        const {email, password} = req.body;
+        const users = await readUserFromFIle();
+
+        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+        if (!user || user.passwordHash !== hashPassword(password)) {
+            return res.status(401).json({error: "Invalid email or password."});
+        }
+
+        res.json({message: "Login successful!", userId: user.id, email: user.email });
+    } catch (error) {
+        res.status(500).json({error: "Internal server error during login."});
+    }
+});
+
+
+function getValidatedUserId(req, res) {
+    const userId = req.headers['x-user-id'];
+    if (!userId) {
+        res.status(401).json({error: "Access Denied. No user session detected."});
+        return null;
+    }
+    return userId;
+}
+
 app.get('/api/tasks', async function(req, res) {
     try {
-        const tasks = await readTasksFromFile();
-        res.json(tasks);
+        const userId = getValidatedUserId(req, res);
+        if (!userId) return;
+
+        const allTasks = await readTasksFromFile();
+        const userSpecificTasks = allTasks.filter(task => task.userId === userId);
+
+        res.json(userSpecificTasks);
     } catch (error) {
-        res.status(500).json({error: "Failed to read database file."});
+        res.status(500).json({error: "Failed to load tasks."});
     }
 });
 
 app.post('/api/tasks', async function(req, res) {
     try {
-        const { name, priority, id } = req.body;
+        const userId = getValidatedUserId(req, res);
+        if (!userId) return;
+
+        const {name, priority, id} = req.body;
+
         if (!name || name.trim() === "") {
             return res.status(400).json({error: "Task name cannot be empty."});
-        }
-        if (name.length > 100) {
-            return res.status(400).json({error: "Task name cannot exceed 100 characters."});
-        }
-        const allowedPriorities = ['low', 'medium', 'high'];
-        if (!allowedPriorities.includes(priority)) {
-            return res.status(400).json({error: "Invalid priority level submitted."});
         }
 
         const sanitizedName = name
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+            .replace(/>/g, "&gt;");
 
         const newTask = {
             id: id || Date.now().toString(),
+            userId: userId,
             name: sanitizedName,
-            priority: priority,
+            priority: priority || 'low',
             completed: false
         };
 
-        const tasks = await readTasksFromFile();
-        tasks.push(newTask);
-        await writeTasksToFile(tasks);
+        const allTasks = await readTasksFromFile();
+        allTasks.push(newTask);
+        await writeTasksToFile(allTasks);
 
         res.status(201).json(newTask);
     } catch (error) {
-        res.status(500).json({ error: "Failed to save secure task to disk."});
+        res.status(500).json({error: "Failed to save secure task."});
     }
 });
 
 app.delete('/api/tasks/:id', async function(req, res) {
     try {
+        const userId = getValidatedUserId(req, res);
+        if (!userId) return;
+
         const idToDelete = req.params.id;
-        const tasks = await readTasksFromFile();
+        const allTasks = await readTasksFromFile();
 
-        const updatedTasks = tasks.filter(function(task) {
-            return task.id !== idToDelete;
-        });
+        const taskToDelete = allTasks.find(t => t.id === idToDelete);
+        if (!taskToDelete || taskToDelete.userId !== userId) {
+            return res.status(403).json({error: "Unauthorized task delete request."});
+        }
 
+        const updatedTasks = allTasks.filter(task => task.id !== idToDelete);
         await writeTasksToFile(updatedTasks);
 
-        res.json({message: "Task deleted successfully", id: idToDelete });
+        res.json({message: "Task deleted successfully", id: idToDelete});
     } catch (error) {
-        res.status(500).json({error: "Failed to delete task from disk."});
+        res.status(500).json({error: "Failed to delete task."});
     }
 });
 
 app.put('/api/tasks/:id', async function(req, res) {
     try {
+        const userId = getValidatedUserId(req, res);
+        if (!userId) return;
+
         const idToToggle = req.params.id;
-        const tasks = await readTasksFromFile();
+        const allTasks = await readTasksFromFile();
 
-        const taskToUpdate = tasks.find(function(task) {
-            return task.id === idToToggle;
-        });
-
-        if (taskToUpdate) {
-            taskToUpdate.completed = !taskToUpdate.completed;
-
-            await writeTasksToFile(tasks);
-            res.json(taskToUpdate);
-        } else {
-            res.status(404).json({error: "Task not found."});
+        const taskToUpdate = allTasks.find(t => t.id === idToToggle);
+        if (!taskToUpdate || taskToUpdate.userId !== userId) {
+            return res.status(403).json({error: "Unauthorized task update request."});
         }
+
+        taskToUpdate.completed = !taskToUpdate.completed;
+        await writeTasksToFile(allTasks);
+
+        res.json(taskToUpdate);
     } catch (error) {
-        res.status(500).json({error: "Failed to update task status."});
+        res.status(500).json({error: "Failed to update status."});
     }
 });
 
 app.listen(PORT, function() {
-    console.log(`Server is running at http://localhost:${PORT}`);
+    console.log(`Server running at http://localhost:${PORT}`);
 });
