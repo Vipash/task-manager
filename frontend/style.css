@@ -173,3 +173,24 @@ input:focus {
 .task-card.task-completed del {
     color: #888888;
 }
+
+.filter-btn {
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.filter-btn.active-filter {
+    background-color: #007bff;
+    color: whilte;
+    border-color: #007bff;
+    font-weight: bold;
+}

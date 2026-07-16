@@ -43,16 +43,40 @@ app.get('/api/tasks', async function(req, res) {
 });
 
 app.post('/api/tasks', async function(req, res) {
-    try {   
-        const newTask = req.body;
-        const tasks = await readTasksFromFile();
+    try {
+        const { name, priority, id } = req.body;
+        if (!name || name.trim() === "") {
+            return res.status(400).json({error: "Task name cannot be empty."});
+        }
+        if (name.length > 100) {
+            return res.status(400).json({error: "Task name cannot exceed 100 characters."});
+        }
+        const allowedPriorities = ['low', 'medium', 'high'];
+        if (!allowedPriorities.includes(priority)) {
+            return res.status(400).json({error: "Invalid priority level submitted."});
+        }
 
+        const sanitizedName = name
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+        const newTask = {
+            id: id || Date.now().toString(),
+            name: sanitizedName,
+            priority: priority,
+            completed: false
+        };
+
+        const tasks = await readTasksFromFile();
         tasks.push(newTask);
         await writeTasksToFile(tasks);
 
         res.status(201).json(newTask);
     } catch (error) {
-        res.status(500).json({error: "Failed to save task to disk."});
+        res.status(500).json({ error: "Failed to save secure task to disk."});
     }
 });
 
