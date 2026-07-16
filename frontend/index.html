@@ -13,7 +13,7 @@
         <div id="auth-error-message" style="color: #dc3545; font-size: 0.9rem; margin-bottom: 15px; text-align: center;"></div>
 
         <form id="auth-form">
-            <div class="form-group" style="margin-bottom: 15px;">
+            <div class="form-group" style="margin-bottom: 15px; box-sizing: border-box;">
                 <p id="auth-subtitle" style="margin-bottom: 15px; font-weight: 500;">Input your details here to login:</p>
 
                 <label for="email" style="display: block; font-size: 0.9rem; font-weight: bold; margin-bottom: 5px;">Email ID:</label>
@@ -55,7 +55,7 @@
 
                     <div class="form-group">
                         <label for="task-priority">Priority Level:</label>
-                        <select id="task-pirority">
+                        <select id="task-priority">
                             <option value="low">Low Priority</option>
                             <option value="medium">Medium Priority</option>
                             <option value="high">High Priority</option>
@@ -70,9 +70,9 @@
                 <h3>Your Tasks</h3>
                 <div class="dashboard-controls" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
                     <div class="filter-group" style="display: flex; gap: 5px;">
-                        <button class="filter-btn active-filter" data-filter="acitve">Active</button>
+                        <button class="filter-btn active-filter" data-filter="active">Active</button>
                         <button class="filter-btn" data-filter="active">Active</button>
-                        <button class="Filter-btn" data-filter="completed">Completed</button>
+                        <button class="filter-btn" data-filter="completed">Completed</button>
                     </div>
                     <div class="sort-group">
                         <label for="sort-select" style="font-size: 0.9rem; font-weight: bold; margin-right: 5px;">Sort By:</label>

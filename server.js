@@ -17,7 +17,7 @@ function hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
 }
 
-async function readUserFromFile() {
+async function readUsersFromFile() {
     try {
         const rawData = await fs.readFile(USERS_FILE_PATH, 'utf8');
         return JSON.parse(rawData);
@@ -85,7 +85,7 @@ app.post('/api/register', async function(req, res) {
 app.post('/api/login', async function(req, res) {
     try {
         const {email, password} = req.body;
-        const users = await readUserFromFIle();
+        const users = await readUsersFromFile();
 
         const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
         if (!user || user.passwordHash !== hashPassword(password)) {
