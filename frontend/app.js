@@ -20,26 +20,30 @@ function renderTasks() {
 
     tasks.forEach(function(task) {
         const taskCard = document.createElement('div');
-        taskCard.className = 'task-card';
 
-        if (task.priority === 'high') {
-            taskCard.className = 'task-card border-high';
-        }
+        let cardClasses = 'task-card';
+        if (task.priority === 'high') cardClasses += ' border-high';
+        if (task.completed) cardClasses += ' task-completed';
 
-    taskCard.innerHTML = `
-    <div class="task-details">
-        <h4>${task.name}</h4>
-        <p>Priority: ${task.priority.toUpperCase()}</p>
-    </div>
-    <div class="task-actions">
-        <button class="status-btn">Complete</button>
-        <button class="delete-btn" data-id="${task.id}">Delete</button>
-    </div>
-    `;
+        taskCard.className = cardClasses;
 
-    tasksContainer.appendChild(taskCard);
-});
+        taskCard.innerHTML = `
+        <div class="task-details">
+            <h4>${task.completed ? `<del>${task.name}</del>` :task.name}</h4>
+            <p>Priority: ${task.priority.toUpperCase()}</p>
+        </div>
+        <div class="task-actions">
+            <button class="status-btn" data-id="${task.id}">
+                ${task.completed ? 'Undo' : 'Complete'}
+            </button>
+            <button class="delete-btn" data-id="${task.id}">Delete</button>
+        </div>
+        `;
+
+        tasksContainer.appendChild(taskCard);
+    });
 }
+
 taskForm.addEventListener('submit', async function(event) {
     event.preventDefault();
 
@@ -68,19 +72,27 @@ taskForm.addEventListener('submit', async function(event) {
 });
 
 tasksContainer.addEventListener('click', async function(event) {
+    const targetId = event.target.getAttribute('data-id');
+
     if (event.target.className === 'delete-btn') {
-        const idToDelete = event.target.getAttribute('data-id');
-
         try {
-            const response = await fetch(`/api/tasks/${idToDelete}`, {
-                method: 'DELETE'
-            });
+            const response = await fetch(`/api/tasks/${targetId}`, {method: 'DELETE'});
+            if (response.ok) await fetchTasks();
+        } catch (error) {
+            console.error("Error deleting task:", error);
+        }
+    }
 
+    if (event.target.className === 'status-btn') {
+        try {
+            const response = await fetch(`/api/tasks/${targetId}`, {
+                method: 'PUT'
+            });
             if (response.ok) {
                 await fetchTasks();
             }
         } catch (error) {
-            console.error("Error deleting task from backend:", error);
+            console.error("Error updating task status:", error);
         }
     }
 });
