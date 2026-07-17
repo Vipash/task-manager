@@ -1,0 +1,17 @@
+# Dependency folders
+node_modules/
+jspm_packages/
+.pnp/
+.pnp.js
+
+# Local Databases & Storage
+database.db
+*.json.bak
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Environmental variables & Secrets
+.env
+.env.local
