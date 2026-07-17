@@ -1,124 +1,121 @@
 const express = require('express');
 const path = require('path');
-const fs = require('fs').promises;
-
 const crypto = require('crypto');
+const Database = require('better-sqlite3');
 
 const app = express();
 const PORT = 3000;
 
-const TASKS_FILE_PATH = path.join(__dirname, 'tasks.json');
-const USERS_FILE_PATH = path.join(__dirname, 'users.json');
+const db = new Database(path.join(__dirname, 'database.db'));
+
+//database schema initialization
+db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        passwordHash TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS tasks (
+        id TEXT PRIMARY KEY,
+        userId TEXT NOT NULL,
+        name TEXT NOT NULL,
+        priority TEXT DEFAULT 'low',
+        completed INTEGER DEFAULT 0, -- SQLite doesn't have Boolean; we use 0 (false) and 1 (true)
+        FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    );
+`);
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'frontend')));
 
+// Helper to hash passwords
 function hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
 }
 
-async function readUsersFromFile() {
-    try {
-        const rawData = await fs.readFile(USERS_FILE_PATH, 'utf8');
-        return JSON.parse(rawData);
-    } catch (error) {
-        if (error.code === 'ENOENT') {
-            await writeUsersToFile([]);
-            return [];
-        }
-        throw error;
-    }
-}
-
-async function writeUsersToFile(usersArray) {
-    await fs.writeFile(USERS_FILE_PATH, JSON.stringify(usersArray, null, 2), 'utf8');
-}
-
-async function readTasksFromFile() {
-    try {
-        const rawData = await fs.readFile(TASKS_FILE_PATH, 'utf8');
-        return JSON.parse(rawData);
-    } catch (error) {
-        if (error.code === 'ENOENT') {
-            await writeTasksToFile([]);
-            return [];
-        }
-        throw error;
-    }
-}
-
-async function writeTasksToFile(tasksArray) {
-    await fs.writeFile(TASKS_FILE_PATH, JSON.stringify(tasksArray, null, 2), 'utf8')
-}
-
-
+//authentication
 app.post('/api/register', async function(req, res) {
     try {
-        const {email, password} = req.body;
+        const { email, password } = req.body;
 
         if (!email || !password || email.trim() === "" || password.trim() === "") {
-            return res.status(400).json({error: "Email and password are required."});
+            return res.status(400).json({ error: "Email and password are required." });
         }
 
-        const users = await readUsersFromFile();
+        const normalizedEmail = email.toLowerCase().trim();
 
-        const userExists = users.some(u => u.email.toLowerCase() === email.toLowerCase());
-        if (userExists) {
-            return res.status(400).json({error: "An account with this email already exists."});
+        const userExistsStmt = db.prepare('SELECT id FROM users WHERE email = ?');
+        const existingUser = userExistsStmt.get(normalizedEmail);
+
+        if (existingUser) {
+            return res.status(400).json({ error: "An account with this email already exists." });
         }
 
         const newUser = {
             id: Date.now().toString(),
-            email: email.toLowerCase(),
+            email: normalizedEmail,
             passwordHash: hashPassword(password)
         };
 
-        users.push(newUser);
-        await writeUsersToFile(users);
+        const insertUserStmt = db.prepare('INSERT INTO users (id, email, passwordHash) VALUES (?, ?, ?)');
+        insertUserStmt.run(newUser.id, newUser.email, newUser.passwordHash);
 
-        res.status(201).json({message: "Registration successful!", userId: newUser.id});
+        res.status(201).json({ message: "Registration successful!", userId: newUser.id });
     } catch (error) {
-        res.status(500).json({error: "Internal server error during registration."});
+        console.error("Registration database error:", error);
+        res.status(500).json({ error: "Internal server error during registration." });
     }
 });
 
 app.post('/api/login', async function(req, res) {
     try {
-        const {email, password} = req.body;
-        const users = await readUsersFromFile();
+        const { email, password } = req.body;
+        const normalizedEmail = email.toLowerCase().trim();
 
-        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+        // Fetch user from database
+        const getUserStmt = db.prepare('SELECT * FROM users WHERE email = ?');
+        const user = getUserStmt.get(normalizedEmail);
+
         if (!user || user.passwordHash !== hashPassword(password)) {
-            return res.status(401).json({error: "Invalid email or password."});
+            return res.status(401).json({ error: "Invalid email or password." });
         }
 
-        res.json({message: "Login successful!", userId: user.id, email: user.email });
+        res.json({ message: "Login successful!", userId: user.id, email: user.email });
     } catch (error) {
-        res.status(500).json({error: "Internal server error during login."});
+        console.error("Login database error:", error);
+        res.status(500).json({ error: "Internal server error during login." });
     }
 });
 
-
+//middleware
 function getValidatedUserId(req, res) {
     const userId = req.headers['x-user-id'];
     if (!userId) {
-        res.status(401).json({error: "Access Denied. No user session detected."});
+        res.status(401).json({ error: "Access Denied. No user session detected." });
         return null;
     }
     return userId;
 }
 
+//task management routing
 app.get('/api/tasks', async function(req, res) {
     try {
         const userId = getValidatedUserId(req, res);
         if (!userId) return;
 
-        const allTasks = await readTasksFromFile();
-        const userSpecificTasks = allTasks.filter(task => task.userId === userId);
+        const getTasksStmt = db.prepare('SELECT * FROM tasks WHERE userId = ?');
+        const tasks = getTasksStmt.all(userId);
 
-        res.json(userSpecificTasks);
+        const formattedTasks = tasks.map(task => ({
+            ...task,
+            completed: !!task.completed
+        }));
+
+        res.json(formattedTasks);
     } catch (error) {
-        res.status(500).json({error: "Failed to load tasks."});
+        console.error("Error reading tasks from DB:", error);
+        res.status(500).json({ error: "Failed to load tasks." });
     }
 });
 
@@ -127,10 +124,10 @@ app.post('/api/tasks', async function(req, res) {
         const userId = getValidatedUserId(req, res);
         if (!userId) return;
 
-        const {name, priority, id} = req.body;
+        const { name, priority, id } = req.body;
 
         if (!name || name.trim() === "") {
-            return res.status(400).json({error: "Task name cannot be empty."});
+            return res.status(400).json({ error: "Task name cannot be empty." });
         }
 
         const sanitizedName = name
@@ -143,16 +140,19 @@ app.post('/api/tasks', async function(req, res) {
             userId: userId,
             name: sanitizedName,
             priority: priority || 'low',
-            completed: false
+            completed: 0
         };
 
-        const allTasks = await readTasksFromFile();
-        allTasks.push(newTask);
-        await writeTasksToFile(allTasks);
+        const insertTaskStmt = db.prepare('INSERT INTO tasks (id, userId, name, priority, completed) VALUES (?, ?, ?, ?, ?)');
+        insertTaskStmt.run(newTask.id, newTask.userId, newTask.name, newTask.priority, newTask.completed);
 
-        res.status(201).json(newTask);
+        res.status(201).json({
+            ...newTask,
+            completed: false
+        });
     } catch (error) {
-        res.status(500).json({error: "Failed to save secure task."});
+        console.error("Error inserting task to DB:", error);
+        res.status(500).json({ error: "Failed to save secure task." });
     }
 });
 
@@ -162,19 +162,21 @@ app.delete('/api/tasks/:id', async function(req, res) {
         if (!userId) return;
 
         const idToDelete = req.params.id;
-        const allTasks = await readTasksFromFile();
 
-        const taskToDelete = allTasks.find(t => t.id === idToDelete);
-        if (!taskToDelete || taskToDelete.userId !== userId) {
-            return res.status(403).json({error: "Unauthorized task delete request."});
+        const getTaskStmt = db.prepare('SELECT userId FROM tasks WHERE id = ?');
+        const task = getTaskStmt.get(idToDelete);
+
+        if (!task || task.userId !== userId) {
+            return res.status(403).json({ error: "Unauthorized task delete request." });
         }
 
-        const updatedTasks = allTasks.filter(task => task.id !== idToDelete);
-        await writeTasksToFile(updatedTasks);
+        const deleteTaskStmt = db.prepare('DELETE FROM tasks WHERE id = ?');
+        deleteTaskStmt.run(idToDelete);
 
-        res.json({message: "Task deleted successfully", id: idToDelete});
+        res.json({ message: "Task deleted successfully", id: idToDelete });
     } catch (error) {
-        res.status(500).json({error: "Failed to delete task."});
+        console.error("Error deleting task in DB:", error);
+        res.status(500).json({ error: "Failed to delete task." });
     }
 });
 
@@ -184,19 +186,26 @@ app.put('/api/tasks/:id', async function(req, res) {
         if (!userId) return;
 
         const idToToggle = req.params.id;
-        const allTasks = await readTasksFromFile();
 
-        const taskToUpdate = allTasks.find(t => t.id === idToToggle);
-        if (!taskToUpdate || taskToUpdate.userId !== userId) {
-            return res.status(403).json({error: "Unauthorized task update request."});
+        const getTaskStmt = db.prepare('SELECT * FROM tasks WHERE id = ?');
+        const task = getTaskStmt.get(idToToggle);
+
+        if (!task || task.userId !== userId) {
+            return res.status(403).json({ error: "Unauthorized task update request." });
         }
 
-        taskToUpdate.completed = !taskToUpdate.completed;
-        await writeTasksToFile(allTasks);
+        const nextCompletedState = task.completed === 1 ? 0 : 1;
+        
+        const updateTaskStmt = db.prepare('UPDATE tasks SET completed = ? WHERE id = ?');
+        updateTaskStmt.run(nextCompletedState, idToToggle);
 
-        res.json(taskToUpdate);
+        res.json({
+            ...task,
+            completed: !!nextCompletedState
+        });
     } catch (error) {
-        res.status(500).json({error: "Failed to update status."});
+        console.error("Error updating task in DB:", error);
+        res.status(500).json({ error: "Failed to update status." });
     }
 });
 

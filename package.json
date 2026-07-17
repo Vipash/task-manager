@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/Vipash/task-manager#readme",
   "dependencies": {
+    "better-sqlite3": "^12.11.1",
     "express": "^5.2.1"
   }
 }
